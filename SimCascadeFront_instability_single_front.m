@@ -4,20 +4,19 @@
 % effects can be neglected.
 % The solution is numerically calculated using pdepe.
 
+clear all;
+clc;
+close all;
+
 genVideo = 0;
 
 
 m = 0;
-xmin = -800;
-xmax = 800;
-tend = 120;
+xmin = -200;
+xmax = 200;
+tend = 20;
 x = xmin:0.1:xmax;
 t = 0:0.1:tend;
-
-d = 4;
-r = 2;
-a1 = 0.75;
-a2 = 0.75;
 
 tic;
 sol = pdepe(m,@pdex4pde,@pdex4ic,@pdex4bc,x,t);
@@ -25,31 +24,10 @@ runTime = toc;
 disp(['Run time: ',num2str(runTime)]);
 u1 = sol(:,:,1);
 u2 = sol(:,:,2);
-%% calculate and find optimal weights in assumption 3
+%% calculate and plot front speeds
 
 [c1,c2,f1init,f2init,t0] = frontSpeed(u1,u2,t,x);
 
-disp(['Speed of leading front: c_1 = ',num2str(c1)]);
-disp(['Speed of secondary front: c_2 = ',num2str(c2)]);
-
-% define function handle
-kappa = linspace(0,10,1000);
-hold on
-plot(kappa,kappa.^2-c2*kappa+(1+a2))
-plot(kappa,d*kappa.^2-c2*kappa-r)
-ylim([-5,1]);
-hold off
-
-pause()
-
-plot(kappa,d*kappa.^2-c1*kappa+r)
-ylim([-5,1]);
-
-pause()
-
-[kappa1,kappa2] = meshgrid(linspace(0,2,200),linspace(0,2,200));
-surf(kappa1,kappa2,d*kappa1.^2-c1*kappa1+r+kappa2*(c1-c2));
-view(2);
 
 %% 
 if genVideo
@@ -99,10 +77,10 @@ plot(x(xidx:end),(x(xidx:end)-f1init)/c1 + t0,'Color','red','LineWidth',2)
 xidx = find(x>f2init,1);
 plot(x(xidx:end),(x(xidx:end)-f2init)/c2+ t0,'Color','green','LineWidth',2)
 hold off
-exportgraphics(gca,'front-cascade-compact-init-top-view.jpg','Resolution',600)
+exportgraphics(gca,'front-cascade-unstable-init-front-top-view.jpg','Resolution',600)
 
 %% plot solution in space-time plot with side view
- 
+
 figure(3);
 hold on;
 for ii = 1:10:numel(t)
@@ -113,7 +91,7 @@ view(15,20)
 xlabel("x")
 ylabel("t")
 pbaspect([100/30 1 1])
-exportgraphics(gca,'front-cascade-compact-init-side-view.jpg','Resolution',600)
+exportgraphics(gca,'front-cascade-unstable-init-front-side-view.jpg','Resolution',600)
 
 
 %% --------------------------------------------------------------------------
@@ -138,9 +116,7 @@ end
 
 function u0 = pdex4ic(x) % sets initial profile
  
-% eps = 1e-2;
-% u0 = eps*(x<5)*(x>-5)*[0;1]+(x<40)*(x>-40)*[1;0];
-u0 = 0.1*(x<10)*(x>-10)*[1;1];
+u0 = (x<50)*(x>-50)*[1;0] + 0.001*(x<10)*(x>-10)*[0;1];
 
 end
 % --------------------------------------------------------------------------
