@@ -8,7 +8,7 @@ clear all;
 clc;
 close all;
 
-genVideo = 0;
+genVideo = 1;
 
 
 m = 0;
@@ -31,7 +31,7 @@ u2 = sol(:,:,2);
 
 %% 
 if genVideo
-    v = VideoWriter('CompactInit.mp4','MPEG-4');
+    v = VideoWriter('Instability-leading-front.mp4','MPEG-4');
     open(v);
     fig = figure;
     h = figure(1);

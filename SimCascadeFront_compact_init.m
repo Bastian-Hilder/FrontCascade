@@ -4,7 +4,7 @@
 % effects can be neglected.
 % The solution is numerically calculated using pdepe.
 
-genVideo = 0;
+genVideo = 1;
 
 
 m = 0;
@@ -31,7 +31,7 @@ u2 = sol(:,:,2);
 
 disp(['Speed of leading front: c_1 = ',num2str(c1)]);
 disp(['Speed of secondary front: c_2 = ',num2str(c2)]);
-
+  
 % define function handle
 kappa = linspace(0,10,1000);
 hold on
