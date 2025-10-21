@@ -85,19 +85,27 @@ s = pcolor(X,T,u1);
 grid off;
 s.EdgeColor="none";
 colormap(flipud(gray))
-xlabel("x")
-ylabel("t")
+xlabel('$x$','Interpreter','latex');
+ylabel('$t$','Interpreter','latex');
 xlim([xmin,xmax])
 ylim([0,tend])
-pbaspect([100/30 1 1])
+pbaspect([100/80 1 1])
+
+set(gca, 'XTick', [], 'YTick', [])
+ax = gca;                 % Get current axes
+ax.FontSize = 36;         % Change font size
+ax.LineWidth = 2;
+
+annotation('arrow', [0.148,0.9], [0.133 0.133], 'LineWidth', 2) % x-axis arrow
+annotation('arrow', [0.148 0.148], [0.13 0.94], 'LineWidth', 2) % y-axis arrow
 
 % plot speed of first front
 xidx = find(x>f1init,1);
-plot(x(xidx:end),(x(xidx:end)-f1init)/c1 + t0,'Color','red','LineWidth',2)
+plot(x(xidx:end),(x(xidx:end)-f1init)/c1 + t0,'Color','red','LineWidth',5)
 
 % plot speed of second front
 xidx = find(x>f2init,1);
-plot(x(xidx:end),(x(xidx:end)-f2init)/c2+ t0,'Color','green','LineWidth',2)
+plot(x(xidx:end),(x(xidx:end)-f2init)/c2+ t0,'Color','green','LineWidth',5)
 hold off
 exportgraphics(gca,'front-cascade-compact-init-top-view.jpg','Resolution',600)
 
@@ -110,8 +118,11 @@ for ii = 1:10:numel(t)
     xlim([0,xmax]);
 end
 view(15,20)
-xlabel("x")
-ylabel("t")
+xlabel('$x$','Interpreter','latex');
+ylabel('$t$','Interpreter','latex');
+ax = gca;                 % Get current axes
+ax.FontSize = 20;         % Change font size
+% ax.LineWidth = 2;
 pbaspect([100/30 1 1])
 exportgraphics(gca,'front-cascade-compact-init-side-view.jpg','Resolution',600)
 

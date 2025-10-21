@@ -8,7 +8,7 @@ clear all;
 clc;
 close all;
 
-genVideo = 1;
+genVideo = 0;
 
 
 m = 0;
@@ -88,8 +88,10 @@ for ii = 1:10:numel(t)
     xlim([0,xmax]);
 end
 view(15,20)
-xlabel("x")
-ylabel("t")
+xlabel('$x$','Interpreter','latex');
+ylabel('$t$','Interpreter','latex');
+ax = gca;                 % Get current axes
+ax.FontSize = 20;         % Change font size
 pbaspect([100/30 1 1])
 exportgraphics(gca,'front-cascade-unstable-init-front-side-view.jpg','Resolution',600)
 
