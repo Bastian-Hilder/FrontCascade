@@ -9,17 +9,14 @@ function [sol, xi_mesh, u_sol] = SolveBVP_coupled_front(c1, d, r, a1, a2, xi_spa
 %   r          - growth rate parameter
 %   a1, a2     - coupling parameters
 %   xi_span    - domain [xi_min, xi_max] for the traveling wave coordinate
-%   num_points - number of mesh points for initial guess (optional)
+%   num_points - number of mesh points for initial guess
+%   el         - left equilibrium in the form [u1; u1'; u2; u2']
+%   er         - right equilibrium in the form [u1; u1'; u2; u2']
 %
 % Outputs:
 %   sol        - solution structure from bvp4c
 %   xi_mesh    - mesh points where solution is computed
 %   u_sol      - solution values [u1; u1'; u2; u2'] at mesh points
-
-% Set default number of points if not provided
-if nargin < 7
-    num_points = 100;
-end
 
 % Define the ODE system
 odefun = @(xi, u) ode_system(xi, u, c1, d, r, a1, a2);
