@@ -111,7 +111,7 @@ if genVideo
     for i = 1:length(t)
         % X = linspace(-20,20,500);
         plot(x,u1(i,:),'Linewidth',2);
-        axis([xmin,xmax,-5,5]);
+        axis([xmin+10,xmax,-5,5]);
         % axis off;
         hold on;
         plot(x,u2(i,:),'Linewidth',2);
@@ -138,7 +138,7 @@ s.EdgeColor="none";
 colormap(flipud(gray))
 xlabel('$x$','Interpreter','latex');
 ylabel('$t$','Interpreter','latex');
-xlim([xmin,xmax])
+xlim([xmin+10,xmax])
 ylim([0,tend])
 pbaspect([100/80 1 1])
 
@@ -166,13 +166,13 @@ figure(3);
 hold on;
 for ii = 1:10:numel(t)
     plot3(x,t(ii)*ones(size(x)),u1(ii,:),'k');
-    xlim([xmin,xmax]);
+    xlim([xmin+10,xmax]);
 end
 view(15,20)
 xlabel('$x$','Interpreter','latex');
 ylabel('$t$','Interpreter','latex');
 ax = gca;                 % Get current axes
-ax.FontSize = 20;         % Change font size
+ax.FontSize = 15;         % Change font size
 % ax.LineWidth = 2;
 pbaspect([100/30 1 1])
 exportgraphics(gca,'front-cascade-supercrit-init.jpg','Resolution',600)
