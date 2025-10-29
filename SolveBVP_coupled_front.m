@@ -28,10 +28,15 @@ bcfun = @(ya, yb) boundary_conditions(ya, yb, el, er);
 xi_init = linspace(xi_span(1), xi_span(2), num_points);
 
 % Create initial guess 
-u_init = @(xi) [(el(1) - er(1))/2 * (tanh(-(xi-(xi_span(2)-xi_span(1))/2)) + 1) + er(1);...
-                (el(2) - er(2))/2 * (tanh(-(xi-(xi_span(2)-xi_span(1))/2)) + 1) + er(2);...
-                (el(3) - er(3))/2 * (tanh(-(xi-(xi_span(2)-xi_span(1))/2)) + 1) + er(3);...
-                (el(4) - er(4))/2 * (tanh(-(xi-(xi_span(2)-xi_span(1))/2)) + 1) + er(4)];
+u_init = @(xi) [(el(1) - er(1))/2 * (tanh(-(xi+(xi_span(2)-xi_span(1))/2)) + 1) + er(1);...
+                (el(2) - er(2))/2 * (tanh(-(xi+(xi_span(2)-xi_span(1))/2)) + 1) + er(2);...
+                (el(3) - er(3))/2 * (tanh(-(xi+(xi_span(2)-xi_span(1))/2)) + 1) + er(3);...
+                (el(4) - er(4))/2 * (tanh(-(xi+(xi_span(2)-xi_span(1))/2)) + 1) + er(4)];
+
+% u1 = u_init(xi_init);
+
+% plot(xi_init, u1(1,:), 'r'); % plot initial guess at first point
+
 
 % Set up boundary value problem
 solinit = bvpinit(xi_init, u_init);

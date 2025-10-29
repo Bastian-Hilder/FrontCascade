@@ -12,6 +12,9 @@ r = 2;
 a1 = 0.75;
 a2 = 0.75;
 
+xmin = -500;
+xmax = 1000;
+
 %% calculate single front profiles
 
 e4 = [(r+a1)/(r-a1*a2); 0; r*(1+a2)/(r-a1*a2); 0]; % left equilibrium
@@ -19,36 +22,74 @@ e1 = [1; 0; 0; 0]; % middle equilibrium
 e0 = [0; 0; 0; 0]; % trivial equilibrium
 
 % faster front
-c2 = 2*sqrt(r*d) + 5; % set speed slightly
+c2 = 2*sqrt(r*d) + 10; % set speed slightly
 disp(['Set speed of faster front to c_2 = ',num2str(c2)]);
 
-[~, xi2, sol_front2] = SolveBVP_coupled_front(c2, d, r, a1, a2, [0,200], 1500, e1, e0);
+vecfield = @(~,u) [u(2);...
+                   -(1/d)*(c2*u(2) + r*u(1).*(1-u(1)))];
+
+L1 = [0,1;...
+      r/d, -c2/d];
+
+[eigvecs, eigvals] = eig(L1);
+[sorted_eigenvals, sortidx] = sort(diag(eigvals));
+sorted_eigenvecs = real(eigvecs(:,sortidx));
+
+u_init = [1;0] + 1e-5*sorted_eigenvecs(:,2)*(-sorted_eigenvecs(1,2));
+[xi2, sol_front2] = ode15s(vecfield, [0,xmax], u_init);
+sol_front2 = sol_front2';
+
+L0 = [0,1;...
+      -r/d, -c2/d];
+[eigvecs0, eigvals0] = eig(L0);
+[sorted_eigenvals0, sortidx0] = sort(diag(eigvals0));
+sorted_eigenvecs0 = real(eigvecs0(:,sortidx0));
+
+xi_replace2_idx = find(sol_front2(1,:)<1e-4,1);
+xi_refined = linspace(xi2(xi_replace2_idx), xi2(end), 5000);
+sol_front2(:,xi_replace2_idx:(xi_replace2_idx+5000-1)) = sol_front2(:,xi_replace2_idx).*exp(-sorted_eigenvals0(2)*xi2(xi_replace2_idx)).*exp(sorted_eigenvals0(2)*xi_refined).*sorted_eigenvecs0(:,2);
+xi2 = [xi2(1:xi_replace2_idx-1); xi_refined'];
+sol_front2 = [sol_front2; zeros(2,length(xi2))]; % add zeros for u2 components
+
+plot(xi2, sol_front2(1,:), 'Linewidth', 2);
+
+% [~, xi2tilde, sol_front2tilde] = SolveBVP_coupled_front(c2, d, r, a1, a2, [xmin,xmax], 1500, e1, e0);
 
 % slower front
-c1 = 0.9*c2; % set speed slightly below c2
+c1 = 0.5*c2; % set speed slightly below c2
 disp(['Set speed of slower front to c_1 = ',num2str(c1)]);
 
-[~, xi1, sol_front1] = SolveBVP_coupled_front(c1, d, r, a1, a2, [-200,0], 1500, e4, e1);
+L1full = [0,1,0,0;...
+          r/d, -c1/d, -a1, 0;...
+          0,0,0,1;...
+          0,0,-1-a2, -c1];
+[eigvecs1, eigvals1] = eig(L1full);
+[sorted_eigenvals1, sortidx1] = sort(diag(eigvals1));
+sorted_eigenvecs1 = real(eigvecs1(:,sortidx1));
 
-xgrid = linspace(-200,200,1600);
-u_init = frontSuperposition(xgrid,xi1,sol_front1,xi2,sol_front2);
-% figure(4);
-% plot(xgrid,u_init(1,:),'Linewidth',2);
-% hold on;
-% plot(xgrid,u_init(2,:),'Linewidth',2);
-% hold off;
+[~, xi1, sol_front1] = SolveBVP_coupled_front(c1, d, r, a1, a2, [xmin,0], 5000, e4, e1);
+
+xi_replace1_idx = find(sol_front1(1,:)-1<1e-1,1);
+sol_front1(:,xi_replace1_idx:end) = e1 + (sol_front1(:,xi_replace1_idx)-e1.*ones(size(sol_front1(:,xi_replace1_idx)))).*exp(-sorted_eigenvals1(3)*xi1(xi_replace1_idx)).*exp(sorted_eigenvals1(3)*xi1(xi_replace1_idx:end)).*sorted_eigenvecs1(:,3);
+
+xgrid = linspace(xmin,xmax,2000);
+u_init = frontSuperposition(xgrid,0,xi1,sol_front1,xi2,sol_front2,c2,c1);
+figure(4);
+plot(xgrid,u_init(1,:),'Linewidth',2);
+hold on;
+plot(xgrid,u_init(2,:),'Linewidth',2);
+hold off;
 
 %% pde dynamics
 
 m = 0;
-xmin = -200;
-xmax = 200;
-tend = 20;
-x = xmin:0.1:xmax;
+tend = 30;
+x = xmin:0.05:xmax;
 t = 0:0.1:tend;
 
 tic;
 sol = pdepe(m,@pdex4pde,@(x)pdex4ic(x,xgrid,u_init),@(xl,ul,xr,ur,t,er,el)pdex4bc(xl,ul,xr,ur,t,e4,e0),x,t);
+% sol = pdepe(m,@(x,t,u,DuDx)pdex4pdeLinear(x,t,u,DuDx,xi1,sol_front1,xi2,sol_front2,c2,c1),@(x)pdex4ic(x,xgrid,u_init),@(xl,ul,xr,ur,t,er,el)pdex4bc(xl,ul,xr,ur,t,e4,e0),x,t);
 runTime = toc;
 disp(['Run time: ',num2str(runTime)]);
 u1 = sol(:,:,1);
@@ -66,7 +107,7 @@ if genVideo
     v = VideoWriter('front-cascade-supercrit-init.mp4','MPEG-4');
     open(v);
     fig = figure;
-    h = figure(1);
+    h = figure(5);
     for i = 1:length(t)
         % X = linspace(-20,20,500);
         plot(x,u1(i,:),'Linewidth',2);
@@ -157,10 +198,30 @@ end
 
 % --------------------------------------------------------------------------
 
+function [c,f,s] = pdex4pdeLinear(x,t,u,DuDx,xi1,front1,xi2,front2,c2,c1) % sets up the pde for the simulation of linear dynamics
+
+% set parameters
+d = 4;
+r = 2;
+a1 = 0.75;
+a2 = 0.75;
+
+uSuperpos = frontSuperposition(x,t,xi1,front1,xi2,front2,c2,c1);
+
+% define pde
+c = [1;1];
+f = [d 0; 0 1] * DuDx;
+s = [r 0; 0 1]*u.*(1-2*uSuperpos) + ([a1 0; 0 a2]*uSuperpos).*([0 1;1 0]*u) + ([a1 0; 0 a2]*u).*([0 1;1 0]*uSuperpos);
+end
+
+% --------------------------------------------------------------------------
+
 function u0 = pdex4ic(x,xgrid,u_init) % sets initial profile
 
 u0 = [interp1(xgrid,u_init(1,:),x,'nearest','extrap');...
       interp1(xgrid,u_init(2,:),x,'nearest','extrap')];
+
+% u0 = 1e-5*(x>100).*(x<120)*[1;1]; % small perturbation initial condition
 
 end
 % --------------------------------------------------------------------------
@@ -215,8 +276,12 @@ end
 % --------------------------------------------------------------------------
 
 
-function [u] = frontSuperposition(x,xi1,sol_front1,xi2,sol_front2)
+function [u] = frontSuperposition(x,t,xi1,sol_front1,xi2,sol_front2,c2,c1)
     u = zeros(2,length(x));
-    u(1,:) = (x>0).*interp1(xi2, sol_front2(1,:), x, 'nearest', 'extrap') + (x < 0).*interp1(xi1, sol_front1(1,:), x, 'nearest', 'extrap');
-    u(2,:) = (x>0).*interp1(xi2, sol_front2(3,:), x, 'nearest', 'extrap') + (x < 0).*interp1(xi1, sol_front1(3,:), x, 'nearest', 'extrap');
+    xcut = - (c2+c1)/2*t; % initial cut position at t
+    u(1,:) = (x>xcut).*interp1(xi2, sol_front2(1,:), x-c2*t, 'nearest', 'extrap') + (x < xcut).*interp1(xi1, sol_front1(1,:), x-c1*t, 'nearest', 'extrap');
+    u(2,:) = (x>xcut).*interp1(xi2, sol_front2(3,:), x-c2*t, 'nearest', 'extrap') + (x < xcut).*interp1(xi1, sol_front1(3,:), x-c1*t, 'nearest', 'extrap');
+    % u(1,:) = interp1(xi2, sol_front2(1,:), x, 'nearest', 'extrap');
+    % u(2,:) = interp1(xi2, sol_front2(3,:), x, 'nearest', 'extrap');
 end
+% --------------------------------------------------------------------------
